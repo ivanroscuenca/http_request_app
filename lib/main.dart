@@ -31,8 +31,8 @@ factory Album.fromJson(Map<String,dynamic> json){
 
 // function async Future Album(grab from the website)
 //Grab album 1
-Future<Album> fetchAlbum() async {
-  final response = await http.get(Uri.parse('https://jsonplaceholder.typicode.com/albums/2'));
+Future<Album> fetchAlbum(int albumId) async {
+  final response = await http.get(Uri.parse('https://jsonplaceholder.typicode.com/albums/$albumId'));
 
 if(response.statusCode==200){
   return Album.fromJson(jsonDecode(response.body));
@@ -55,11 +55,18 @@ class MyApp extends StatefulWidget {
 
 class _myAppState extends State<MyApp> {
   late Future<Album> futureAlbum;
+  final TextEditingController _controller = TextEditingController();
   
+  void _fetchAlbum(){
+    int albumId = int.tryParse(_controller.text)?? 1;
+    setState(() {
+      futureAlbum = fetchAlbum(albumId);
+    });
+  }
   @override
   void initState(){
     super.initState();
-    futureAlbum = fetchAlbum();
+    futureAlbum = fetchAlbum(1);
   }
 
 
@@ -72,18 +79,31 @@ class _myAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('GET HTTP EXAMPLE')),
           body: Center(
-            child: FutureBuilder<Album>( 
-              future: futureAlbum,
-              builder:(context, snapshot) {
-                if(snapshot.hasData){
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextField(
+                  controller: _controller,
+                  keyboardType: TextInputType.number,
+                  decoration : const InputDecoration(labelText:'Album ID Number' )
+                ),
+                ElevatedButton(
+                  onPressed: _fetchAlbum,
+                  child: const Text('Submit'),  
+                ),
+                FutureBuilder<Album>(
+                  future: futureAlbum, builder: (context, snapshot) {
+                    if(snapshot.hasData){
                   return Text(snapshot.data!.title);
                 }else if (snapshot.hasError){
                   return Text('${snapshot.error}');
                 }
                 return const CircularProgressIndicator();
-              }),
-             )
-      )
+                  },)
+              ],
+            ),
+             ),
+      ),
     );
   }
 
